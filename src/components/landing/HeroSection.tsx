@@ -3,8 +3,10 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowRightIcon } from 'lucide-react';
+import { SignedIn, SignedOut, SignInButton, useAuth } from '@clerk/nextjs';
 
 export default function HeroSection() {
+  const { isSignedIn, isLoaded } = useAuth();
   return (
     <section
       id="hero"
@@ -33,20 +35,42 @@ export default function HeroSection() {
           you in seconds.
         </p>
         <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-          <Button 
-            size="lg" 
-            asChild 
-            className="group bg-sky-500 hover:bg-sky-400 text-white shadow-lg hover:shadow-sky-500/40 transition-all duration-300 transform hover:scale-105"
-          >
-            <Link href="/dashboard">
-              Start Generating Workflows
-              <ArrowRightIcon className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-            </Link>
-          </Button>
-          <Button 
-            size="lg" 
-            variant="outline" 
-            asChild 
+          {!isLoaded ? (
+            // Placeholder or loading state for the button
+            <Button size="lg" disabled className="group bg-sky-500 text-white shadow-lg transition-all duration-300">
+              Loading...
+            </Button>
+          ) : (
+            <>
+              <SignedIn>
+                <Button
+                  size="lg"
+                  asChild
+                  className="group bg-sky-500 hover:bg-sky-400 text-white shadow-lg hover:shadow-sky-500/40 transition-all duration-300 transform hover:scale-105"
+                >
+                  <Link href="/dashboard">
+                    Start Generating Workflows
+                    <ArrowRightIcon className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                  </Link>
+                </Button>
+              </SignedIn>
+              <SignedOut>
+                <SignInButton mode="modal">
+                  <Button
+                    size="lg"
+                    className="group bg-sky-500 hover:bg-sky-400 text-white shadow-lg hover:shadow-sky-500/40 transition-all duration-300 transform hover:scale-105"
+                  >
+                    Start Generating Workflows
+                    <ArrowRightIcon className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                  </Button>
+                </SignInButton>
+              </SignedOut>
+            </>
+          )}
+          <Button
+            size="lg"
+            variant="outline"
+            asChild
             className="bg-transparent border-slate-500 text-slate-200 hover:bg-slate-800 hover:text-white hover:border-slate-400 transition-all duration-300 transform hover:scale-105"
           >
             <Link href="#how-it-works">
