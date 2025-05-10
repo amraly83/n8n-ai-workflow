@@ -1,7 +1,14 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import {
+  ClerkProvider,
+  SignInButton,
+  SignUpButton,
+  SignedIn,
+  SignedOut,
+  UserButton,
+} from "@clerk/nextjs";
 import "./globals.css";
-import { SupabaseAuthProvider } from "@/components/auth/SupabaseAuthProvider"; // Changed import
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,8 +21,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "n8n AI Workflow Generator", // Updated title
-  description: "Generate n8n workflows by describing them in plain text.", // Updated description
+  title: "n8n AI Workflow Generator",
+  description: "Generate n8n workflows by describing them in plain text.",
 };
 
 export default function RootLayout({
@@ -24,15 +31,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>{/* Added suppressHydrationWarning for NextAuth compatibility */}
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        suppressHydrationWarning={true}
-      >
-        <SupabaseAuthProvider> {/* Wrapped children with SupabaseAuthProvider */}
+    <ClerkProvider>
+      <html lang="en" suppressHydrationWarning>
+        <body
+          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+          suppressHydrationWarning={true}
+        >
+          <header>
+            <SignedOut>
+              <SignInButton />
+              <SignUpButton />
+            </SignedOut>
+            <SignedIn>
+              <UserButton />
+            </SignedIn>
+          </header>
           {children}
-        </SupabaseAuthProvider>
-      </body>
-    </html>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

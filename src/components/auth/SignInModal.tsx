@@ -47,6 +47,8 @@ export function SignInModal({ open, onOpenChange }: SignInModalProps) {
       } else {
         toast.success("Signed in successfully!");
         onOpenChange(false); // Close modal on successful sign-in
+        // Ensure session is refreshed before redirecting
+        await supabase.auth.getSession(); // Force session refresh
         router.push('/dashboard'); // Redirect to dashboard
         // Auth state change will also be handled by SupabaseAuthProvider
       }
