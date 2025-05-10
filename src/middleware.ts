@@ -1,4 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from 'next/server';
 
 const isProtectedRoute = createRouteMatcher([
   '/dashboard(.*)',        // Protects all routes under /dashboard
@@ -13,7 +14,9 @@ export default clerkMiddleware((auth, req) => {
     // If authenticated, it allows the request to proceed.
     auth.protect();
   }
-  // For public routes, do nothing and allow access.
+  // For public routes, or if auth.protect() did not throw/redirect for a protected route,
+  // allow the request to proceed.
+  return NextResponse.next();
 });
 
 export const config = {
