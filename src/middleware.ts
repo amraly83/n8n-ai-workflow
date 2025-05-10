@@ -72,6 +72,13 @@ export async function middleware(req: NextRequest) {
     }
   } else {
     console.log('[Middleware] Path is not protected.');
+    // If accessing root URL and session exists, redirect to dashboard
+    if (req.nextUrl.pathname === '/' && session) {
+      console.log('[Middleware] Session found at root, redirecting to /dashboard');
+      const redirectUrl = req.nextUrl.clone();
+      redirectUrl.pathname = '/dashboard';
+      return NextResponse.redirect(redirectUrl);
+    }
   }
 
 
