@@ -6,7 +6,7 @@ import { ArrowRightIcon } from 'lucide-react';
 import { SignedIn, SignedOut, SignInButton, useAuth } from '@clerk/nextjs';
 
 export default function HeroSection() {
-  const { isSignedIn, isLoaded } = useAuth();
+  const { isLoaded } = useAuth();
   return (
     <section
       id="hero"
