@@ -3,13 +3,13 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { PlusCircleIcon, FileTextIcon, ZapIcon, UserCircle2Icon } from 'lucide-react';
-import { useSupabaseAuth } from '@/components/auth/SupabaseAuthProvider'; // Changed import
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'; // Removed CardDescription
+import { useUser } from '@clerk/nextjs';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 export default function DashboardOverviewPage() {
-  const { user } = useSupabaseAuth(); // Changed to useSupabaseAuth
+  const { user } = useUser();
 
-  const userName = user?.user_metadata?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'User';
+  const userName = user?.fullName?.split(' ')[0] || user?.primaryEmailAddress?.emailAddress?.split('@')[0] || 'User';
 
   return (
     <div className="flex flex-col gap-6">

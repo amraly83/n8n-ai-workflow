@@ -5,13 +5,12 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Input } from "@/components/ui/input";
 import Link from 'next/link';
 import { Label } from "@/components/ui/label";
-import { useSupabaseAuth } from "@/components/auth/SupabaseAuthProvider"; // Changed import
-import { supabase } from "@/lib/supabaseClient"; // Import supabase client
+import { useUser } from "@clerk/nextjs";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
 export default function AccountPage() {
-  const { user } = useSupabaseAuth(); // Removed unused 'session'
+  const { user } = useUser();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [isSubmittingProfile, setIsSubmittingProfile] = useState(false);
@@ -22,8 +21,8 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (user) {
-      setName(user.user_metadata?.full_name || '');
-      setEmail(user.email || '');
+      setName(user.fullName || '');
+      setEmail(user.primaryEmailAddress?.emailAddress || '');
     }
   }, [user]);
 
@@ -32,15 +31,16 @@ export default function AccountPage() {
     setIsSubmittingProfile(true);
     console.log("Profile update submitted:", { name });
 
-    const { error } = await supabase.auth.updateUser({ // Removed unused 'data'
-      data: { full_name: name }, // Supabase uses 'data' for user_metadata
-    });
-
-    if (error) {
+    try {
+      if (user) {
+        await user.update({
+          firstName: name.split(' ')[0],
+          lastName: name.split(' ').slice(1).join(' '),
+        });
+        toast.success("Profile updated successfully!");
+      }
+    } catch (error: any) {
       toast.error(error.message || "Failed to update profile.");
-    } else {
-      toast.success("Profile updated successfully!");
-      // SupabaseAuthProvider will pick up the change via onAuthStateChange
     }
     setIsSubmittingProfile(false);
   };
@@ -58,24 +58,25 @@ export default function AccountPage() {
     setIsSubmittingPassword(true);
     console.log("Password change submitted for user:", user?.id);
 
-    // Supabase's updateUser for password change doesn't require currentPassword on client if user is logged in
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword,
-    });
-
-    if (error) {
+    try {
+      if (user) {
+        await user.updatePassword({
+          currentPassword,
+          newPassword,
+        });
+        toast.success("Password changed successfully!");
+      }
+    } catch (error: any) {
       toast.error(error.message || "Failed to change password.");
-    } else {
-      toast.success("Password changed successfully!");
     }
     setIsSubmittingPassword(false);
-    setCurrentPassword(''); // Current password not needed for client-side Supabase updateUser
+    setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
   };
   
   // Determine if user signed up with email/password provider
-  const hasPasswordAuth = user?.app_metadata?.provider === 'email';
+  const hasPasswordAuth = user?.primaryEmailAddressId !== undefined;
 
   return (
     <div className="flex flex-col gap-8">
