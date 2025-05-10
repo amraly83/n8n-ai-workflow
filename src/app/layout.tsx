@@ -25,8 +25,8 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <html lang="en" suppressHydrationWarning> {/* Added suppressHydrationWarning from previous state */}
-        <body 
+      <html lang="en" suppressHydrationWarning>{/* Added suppressHydrationWarning from previous state */}
+<body 
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}  // Kept font variables and antialiased
           suppressHydrationWarning={true} /* Added suppressHydrationWarning from previous state */
         >
