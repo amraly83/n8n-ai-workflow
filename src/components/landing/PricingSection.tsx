@@ -67,7 +67,7 @@ export default function PricingSection() {
             Simple, Transparent Pricing
           </h2>
           <p className="mt-4 max-w-2xl mx-auto text-lg text-slate-600 dark:text-slate-400">
-            Choose the plan that's right for you and start automating today.
+            Choose the plan that&apos;s right for you and start automating today.
           </p>
           {/* Optional: Monthly/Annually Toggle
           <div className="mt-6">

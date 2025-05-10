@@ -27,7 +27,7 @@ export default function ContactUsSection() {
             Get in Touch
           </h2>
           <p className="mt-4 max-w-2xl mx-auto text-lg text-slate-600 dark:text-slate-400">
-            Have questions or want to discuss a custom solution? We'd love to hear from you.
+            Have questions or want to discuss a custom solution? We&apos;d love to hear from you.
           </p>
         </div>
 
