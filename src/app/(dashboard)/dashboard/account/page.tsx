@@ -39,8 +39,9 @@ export default function AccountPage() {
         });
         toast.success("Profile updated successfully!");
       }
-    } catch (error: any) {
-      toast.error(error.message || "Failed to update profile.");
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to update profile.";
+      toast.error(errorMessage);
     }
     setIsSubmittingProfile(false);
   };
@@ -66,8 +67,9 @@ export default function AccountPage() {
         });
         toast.success("Password changed successfully!");
       }
-    } catch (error: any) {
-      toast.error(error.message || "Failed to change password.");
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to change password.";
+      toast.error(errorMessage);
     }
     setIsSubmittingPassword(false);
     setCurrentPassword('');
