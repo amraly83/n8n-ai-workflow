@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react'; // Removed useEffect and useRouter
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation'; // Added useRouter
-import { useSupabaseAuth } from '@/components/auth/SupabaseAuthProvider'; // Changed import
+import { usePathname } from 'next/navigation';
+import { useUser, useClerk } from '@clerk/nextjs'; // Clerk imports
 import {
   LayoutDashboardIcon,
   FileTextIcon,
@@ -65,21 +65,28 @@ function DashboardNav({ isMobile = false, onLinkClick }: { isMobile?: boolean, o
 }
 
 function UserMenu() {
-  const { user, signOut } = useSupabaseAuth();
+  const { user, isLoaded } = useUser();
+  const { signOut } = useClerk();
 
-  if (!user) return null;
+  if (!isLoaded || !user) {
+    // Can return a loading skeleton or null
+    return null; 
+  }
 
-  const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
-  const userEmail = user.email;
-  const userImage = user.user_metadata?.avatar_url || user.user_metadata?.picture;
+  const userName = user.fullName || user.firstName || user.primaryEmailAddress?.emailAddress?.split('@')[0] || 'User';
+  const userEmail = user.primaryEmailAddress?.emailAddress;
+  const userImage = user.imageUrl;
 
   const getInitials = (name?: string | null) => {
     if (!name) return 'U';
     const names = name.split(' ');
-    if (names.length > 1) {
+    if (names.length > 1 && names[0] && names[names.length - 1]) {
       return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
     }
-    return name.substring(0, 2).toUpperCase();
+    if (names[0]) {
+      return names[0].substring(0, 2).toUpperCase();
+    }
+    return 'U';
   };
 
   return (
@@ -87,8 +94,8 @@ function UserMenu() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
           <Avatar className="h-9 w-9 border dark:border-slate-600">
-            <AvatarImage src={userImage ?? undefined} alt={userName ?? 'User'} />
-            <AvatarFallback>{getInitials(userName)}</AvatarFallback>
+            <AvatarImage src={userImage} alt={userName ?? 'User'} />
+            <AvatarFallback>{getInitials(user.fullName || user.firstName)}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
@@ -100,7 +107,7 @@ function UserMenu() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={async () => await signOut()} className="cursor-pointer text-red-600 dark:text-red-400 hover:!bg-red-50 dark:hover:!bg-red-500/10 focus:!bg-red-50 dark:focus:!bg-red-500/10 focus:!text-red-600 dark:focus:!text-red-400">
+        <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer text-red-600 dark:text-red-400 hover:!bg-red-50 dark:hover:!bg-red-500/10 focus:!bg-red-50 dark:focus:!bg-red-500/10 focus:!text-red-600 dark:focus:!text-red-400">
           <LogOutIcon className="mr-2 h-4 w-4" />
           Log out
         </DropdownMenuItem>
@@ -111,19 +118,9 @@ function UserMenu() {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { user, isLoading } = useSupabaseAuth(); // Removed unused session
-  const router = useRouter();
+  // Authentication and loading state are handled by Clerk's middleware and RootLayout <SignedIn>
+  // No need for explicit user/isLoading checks here to prevent rendering or redirect
 
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.push('/'); // Redirect to landing page if not authenticated
-    }
-  }, [isLoading, user, router]);
-
-  if (isLoading || (!isLoading && !user)) {
-    return <div className="flex h-screen items-center justify-center"><p>Loading dashboard...</p></div>; 
-  }
-  
   return (
     <div className="grid min-h-screen w-full lg:grid-cols-[280px_1fr]">
       {/* Desktop Sidebar */}

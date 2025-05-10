@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google"; // Assuming these fonts are still desired
 import {
   ClerkProvider,
   SignInButton,
@@ -10,32 +10,32 @@ import {
 } from "@clerk/nextjs";
 import "./globals.css";
 
-const geistSans = Geist({
+const geistSans = Geist({ // Assuming these fonts are still desired
   variable: "--font-geist-sans",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
+const geistMono = Geist_Mono({ // Assuming these fonts are still desired
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "n8n AI Workflow Generator",
-  description: "Generate n8n workflows by describing them in plain text.",
+  title: "n8n AI Workflow Generator", // Kept original title
+  description: "Generate n8n workflows by describing them in plain text.", // Kept original description
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-          suppressHydrationWarning={true}
+      <html lang="en" suppressHydrationWarning> {/* Added suppressHydrationWarning from previous state */}
+        <body 
+          className={`${geistSans.variable} ${geistMono.variable} antialiased`}  // Kept font variables and antialiased
+          suppressHydrationWarning={true} /* Added suppressHydrationWarning from previous state */
         >
           <header>
             <SignedOut>
