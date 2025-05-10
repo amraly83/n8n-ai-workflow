@@ -1,0 +1,301 @@
+## Active Context
+
+**Current Workstream:** Addressing UI bugs, improving component stability, and preparing for repository creation.
+
+**Recent Significant Changes:**
+- **Re-enabled Auth in `/api/generate-workflow` Route:**
+    - **Context:** Authentication for this route was temporarily disabled to allow local testing of the n8n agent call, due to issues accessing the dashboard locally (caused by Supabase Site URL mismatch).
+    - **User Request:** To ensure user status is checked before any action on the website, in preparation for creating a GitHub repository.
+    - **Fix Applied:** Re-enabled (uncommented) the session validation block (which uses `supabase.auth.getSession()`) in `n8n-ai-workflow-generator/src/app/api/generate-workflow/route.ts`.
+    - **File:** `n8n-ai-workflow-generator/src/app/api/generate-workflow/route.ts`
+    - **Rationale:** To restore the intended security measure for this API endpoint, ensuring it requires an authenticated user. This aligns the codebase with a more production-ready state. Note: This route will likely be inaccessible locally if called from the UI due to the ongoing cookie/Site URL issue preventing dashboard access.
+- **Corrected Supabase Middleware Session Reading:**
+    - **Issue:** The Next.js middleware (`src/middleware.ts`) was consistently reporting "No session" even after successful login and token presence in local storage. This prevented redirection to the dashboard and access to protected routes.
+    - **Analysis:** The `updateSession` helper (`src/utils/supabase/middleware.ts`) correctly refreshed the session and set new cookies on its returned `response` object. However, the main `middleware.ts` created a new Supabase client instance *after* `updateSession` returned, and this new client was configured to read cookies from the *original request* (`req.cookies`) instead of the `response` object (`res.cookies`) that contained the potentially updated session cookies from `updateSession`.
+    - **Fix Applied:** Modified `src/middleware.ts` so that the `createServerClient` instance (used to call `supabase.auth.getSession()`) now configures its `cookies.getAll()` method to read from `res.cookies` (the response object returned by `updateSession`). This ensures it reads the most up-to-date cookie state.
+    - **File:** `n8n-ai-workflow-generator/src/middleware.ts`
+    - **Rationale:** To ensure that the Supabase client checking the session state in the main middleware has access to any cookies that were set or refreshed by the `updateSession` helper, thereby correctly identifying an active session.
+- **Fixed Nested Anchor Tag Hydration Error (StickyHeader - Corrected Approach):**
+    - **Initial Issue:** A hydration error was occurring due to nested `<a>` tags in `n8n-ai-workflow-generator/src/components/layout/StickyHeader.tsx`.
+    - **Initial Attempt:** Used `legacyBehavior passHref` on the Next.js `<Link>` component. This resolved the immediate error but `legacyBehavior` is deprecated.
+    - **Corrected Fix:** Modified the implementation to use the `asChild` prop on the `NavigationMenuLink` component. The Next.js `<Link>` component is now passed as a child to `NavigationMenuLink`. The `className` for styling (from `navigationMenuTriggerStyle()`) is applied directly to the `Link` component.
+    - **File:** `n8n-ai-workflow-generator/src/components/layout/StickyHeader.tsx`
+    - **Rationale:** Using `asChild` on the Radix-based component (`NavigationMenuLink`) allows it to delegate its rendering to its child (`Link`), effectively merging their props and avoiding nested `<a>` tags. This is the recommended approach for integrating Next.js `Link` with Radix UI primitives (often used in shadcn/ui).
+- **Addressed General Hydration Mismatch Error (Root Layout):**
+    - **Issue:** A general React hydration error was observed, indicating a mismatch between server-rendered HTML and client-side properties. The diff pointed to attributes like `data-cjcrx` and `fdprocessedid` (often injected by browser extensions) on the `<body>` tag and various input elements.
+    - **Fix Applied:** Added `suppressHydrationWarning={true}` to the `<body>` tag in `n8n-ai-workflow-generator/src/app/layout.tsx`. The `<html>` tag already had this prop.
+    - **File:** `n8n-ai-workflow-generator/src/app/layout.tsx`
+    - **Rationale:** While `suppressHydrationWarning` doesn't fix the underlying cause of mismatches (often external scripts or extensions altering HTML), it prevents React from warning about them, which can be acceptable for attributes known to be injected by third parties and not critical to the application's core functionality. This is particularly useful for attributes like `fdprocessedid` which are known to be added by extensions.
+- **Attempted to Address Persistent Hydration Mismatch in Input Fields (ContactUsSection):**
+    - **Issue:** Despite adding `suppressHydrationWarning` to `<html>` and `<body>`, hydration errors persisted specifically for `fdprocessedid` attributes on `Input` components within `ContactUsSection.tsx`.
+    - **Fix Applied:** Added `suppressHydrationWarning={true}` directly to each of the three `Input` components in `n8n-ai-workflow-generator/src/components/landing/ContactUsSection.tsx`.
+    - **File:** `n8n-ai-workflow-generator/src/components/landing/ContactUsSection.tsx`
+    - **Rationale:** Applying the suppression prop directly to the affected components is a more targeted approach when global suppression isn't fully effective, likely due to component structure or the timing of external script modifications.
+- **Attempted to Address Persistent Hydration Mismatch in Button (ContactUsSection):**
+    - **Issue:** After addressing `Input` fields, the hydration error persisted for the `Button` component in `ContactUsSection.tsx`, again related to the `fdprocessedid` attribute.
+    - **Fix Applied:** Added `suppressHydrationWarning={true}` to the `Button` component in `n8n-ai-workflow-generator/src/components/landing/ContactUsSection.tsx`.
+    - **File:** `n8n-ai-workflow-generator/src/components/landing/ContactUsSection.tsx`
+    - **Rationale:** Consistent with the approach for `Input` fields, applying suppression directly to the `Button` component.
+- **Fixed "Learn More" Button Styling in Hero Section:**
+    - **Issue:** The "Learn More" button in `HeroSection.tsx` had white text on a white/light background due to the `outline` variant's default `bg-background`.
+    - **Fix Applied:** Added `bg-transparent` to the button's `className` to make its background transparent, allowing the dark hero section gradient to show through. The existing `text-slate-100` and `border-slate-400` ensure visibility.
+    - **File:** `n8n-ai-workflow-generator/src/components/landing/HeroSection.tsx`
+    - **Rationale:** Overriding the default background of the outline button for this specific instance ensures it's styled correctly against the dark hero background.
+- **Fixed Non-Functional Sign In/Sign Up Buttons:**
+    - **Issue:** Sign In and Sign Up buttons in `StickyHeader.tsx` linked to `/auth/signin` and `/auth/signup` respectively, which are not actual pages and NextAuth.js was not configured to use custom pages.
+    - **Fix Applied:** Changed the `href` for both "Sign In" and "Sign Up" buttons to `/api/auth/signin`. This directs users to the default NextAuth.js sign-in page, which will present the configured GitHub provider. For GitHub, sign-up is implicit with the first sign-in.
+    - **File:** `n8n-ai-workflow-generator/src/components/layout/StickyHeader.tsx`
+    - **Rationale:** Aligning button links with the NextAuth.js default behavior for provider-based authentication when custom pages are not implemented.
+- **Added Credentials Provider for Email/Password Authentication:**
+    - **Issue:** User feedback indicated that only GitHub was available as a sign-in/sign-up option.
+    - **Fix Applied:**
+        - Added `hashedPassword String?` to the `User` model in `prisma/schema.prisma`. (Note: `prisma db push` failed due to DB connection, `prisma generate` failed due to EPERM; user needs to resolve these for TS errors to clear and DB to update).
+        - Installed `bcryptjs` and `@types/bcryptjs`.
+        - Updated `src/app/api/auth/[...nextauth]/route.ts` to include `CredentialsProvider` with an `authorize` function to validate email/password against the database using `bcryptjs`. Set session strategy to "jwt".
+        - Created a new registration API route at `src/app/api/auth/register/route.ts` to handle user sign-up with email and password, including password hashing.
+    - **Files:**
+        - `n8n-ai-workflow-generator/prisma/schema.prisma`
+        - `n8n-ai-workflow-generator/src/app/api/auth/[...nextauth]/route.ts`
+        - `n8n-ai-workflow-generator/src/app/api/auth/register/route.ts`
+    - **Rationale:** To provide users with an alternative email/password authentication method in addition to GitHub. This addresses the user's feedback for more sign-in options. The default NextAuth.js sign-in page will now offer both.
+- **Implemented Modal-Based Sign-In/Sign-Up:**
+    - **Issue:** User requested sign-in/sign-up forms to be modals on the same page, not separate pages.
+    - **Fix Applied:**
+        - Created `SignInModal.tsx` component using Shadcn/ui Dialog, Input, Label, Button. Handles credentials and GitHub sign-in via `next-auth/react`.
+        - Created `SignUpModal.tsx` component, similar to SignInModal. Handles credentials sign-up by POSTing to `/api/auth/register` and GitHub sign-up via `next-auth/react`. Includes toast notifications for feedback.
+        - Installed Shadcn/ui `label` component.
+        - Updated `StickyHeader.tsx` to manage state for these modals and trigger them from the "Sign In" / "Sign Up" buttons, replacing direct links. Implemented logic to switch from Sign Up to Sign In modal.
+    - **Files:**
+        - `n8n-ai-workflow-generator/src/components/auth/SignInModal.tsx` (New)
+        - `n8n-ai-workflow-generator/src/components/auth/SignUpModal.tsx` (New)
+        - `n8n-ai-workflow-generator/src/components/layout/StickyHeader.tsx` (Modified)
+        - `n8n-ai-workflow-generator/src/components/ui/label.tsx` (New via CLI)
+    - **Rationale:** To meet user requirement for modal-based authentication, providing a more integrated UX.
+- **Redesigned "How It Works" Section (Second Iteration - Horizontal Timeline):**
+    - **Issue:** User requested a different layout after the initial redesign to a vertical alternating layout.
+    - **Fix Applied:** Changed the layout to a horizontal timeline.
+        - Steps are arranged in a grid that behaves as a horizontal timeline on medium screens and up, stacking vertically on small screens.
+        - Each step features a prominent numbered node, icon, title, and description.
+        - A visual connecting line is present for the horizontal layout, and vertical connectors for the stacked mobile layout.
+    - **File:** `n8n-ai-workflow-generator/src/components/landing/HowItWorksSection.tsx`
+    - **Rationale:** To explore a different visual style (horizontal timeline) for presenting the steps, aiming for clarity and modern aesthetics.
+- **Added FAQ Section:**
+    - **Issue:** User requested an FAQ section with an accordion layout.
+    - **Fix Applied:**
+        - Installed Shadcn/ui `accordion` component.
+        - Created `FaqSection.tsx` in `src/components/landing/` using the accordion component and sample FAQ data.
+        - Added `FaqSection` to `src/app/page.tsx` (between Testimonials and Contact Us).
+        - Added "FAQ" link to `navLinks` in `src/components/layout/StickyHeader.tsx`.
+    - **Files:**
+        - `n8n-ai-workflow-generator/src/components/ui/accordion.tsx` (New via CLI)
+        - `n8n-ai-workflow-generator/src/components/landing/FaqSection.tsx` (New)
+        - `n8n-ai-workflow-generator/src/app/page.tsx` (Modified)
+        - `n8n-ai-workflow-generator/src/components/layout/StickyHeader.tsx` (Modified)
+    - **Rationale:** To provide users with answers to common questions in an organized and accessible manner.
+- **Redesigned "Contact Us" Section:**
+    - **Issue:** User requested a change in layout/visuals for the Contact Us section and removal of explicit contact details.
+    - **Fix Applied:**
+        - Modified `ContactUsSection.tsx` to a single-column layout.
+        - The contact form is now centered and presented within a single, wider `Card`.
+        - The separate `Card` displaying contact information (email, phone, address) has been removed.
+        - Minor styling adjustments made to the form fields and button for a cleaner look.
+    - **File:** `n8n-ai-workflow-generator/src/components/landing/ContactUsSection.tsx`
+    - **Rationale:** To simplify the section, focusing on the contact form and giving it a more modern, centered presentation as per user feedback.
+- **Adjusted Main Content Padding:**
+    - **Issue:** User reported excessive whitespace between the sticky header and the hero section.
+    - **Fix Applied:** Removed the `pt-16` (padding-top) class from the `<main>` element in `src/app/page.tsx`. The `HeroSection` itself has `py-20` which should provide sufficient top spacing for its content below the transparent header.
+    - **File:** `n8n-ai-workflow-generator/src/app/page.tsx`
+    - **Rationale:** To reduce the cumulative top padding when the header is transparent at the top of the page, allowing the `HeroSection`'s background to extend more naturally to the viewport top.
+- **Enhanced Hero Section Design:**
+    - **Issue:** User requested a more professional, sleek, and modern design for the Hero Section.
+    - **Fix Applied:**
+        - Slightly reduced `min-height` for a tighter feel.
+        - Simplified the main background to `bg-slate-900`.
+        - Activated and customized subtle radial gradient glows in the background for depth (top-left sky, bottom-right indigo).
+        - Changed the "With the Power of AI" strapline to use a gradient text effect (`from-sky-400 to-cyan-300`).
+        - Adjusted margins for text elements and refined button styling with shadows and hover scale transforms for a more premium feel.
+    - **File:** `n8n-ai-workflow-generator/src/components/landing/HeroSection.tsx`
+    - **Rationale:** To elevate the visual appeal of the hero section with modern design techniques like subtle glows, gradient text, and enhanced button interactions.
+- **Redesigned Pricing Section:**
+    - **Issue:** User requested a layout change for the pricing section.
+    - **Fix Applied:**
+        - Kept the 3-column grid structure but enhanced the visual distinction of the cards.
+        - The featured plan (`Pro`) is now styled with a different background (dark in light mode, light in dark mode), a prominent border, and is slightly scaled up on larger screens (`lg:scale-105`) with a higher z-index to make it pop.
+        - The "Most Popular" badge on the featured plan has a gradient background.
+        - Non-featured cards have updated hover effects.
+        - Text styling (titles, descriptions, prices, features) and CTA button styling are differentiated for the featured plan versus non-featured plans to improve clarity and visual hierarchy.
+        - Ensured consistent `min-h` for descriptions and used `mt-auto` for footers to align buttons.
+    - **File:** `n8n-ai-workflow-generator/src/components/landing/PricingSection.tsx`
+    - **Rationale:** To make the pricing tiers clearer, more visually appealing, and to draw more attention to the featured plan, while maintaining a responsive grid layout.
+- **Redesigned Features Section ("Why Choose Us"):**
+    - **Issue:** User requested a more "catchy" design for the features section to showcase uniqueness.
+    - **Fix Applied:**
+        - Updated the section title to "Unlock the Full Potential of n8n with AI" and refined the subtitle.
+        - Replaced Shadcn/ui `Card` components with custom `div` elements styled as cards.
+        - Each feature card now has a centered, larger icon with a gradient background and a hover scale effect.
+        - Text (title, description) is centered within each card.
+        - Cards have a hover effect including a lift (`hover:-translate-y-1`) and a subtle border highlight.
+    - **File:** `n8n-ai-workflow-generator/src/components/landing/FeaturesSection.tsx`
+    - **Rationale:** To create a more visually dynamic and modern presentation for the features, aiming to make them more engaging and highlight their importance.
+- **Redesigned Sign-In and Sign-Up Modals:**
+    - **Issue:** User requested a more modern and user-friendly design for the authentication modals.
+    - **Fix Applied:**
+        - Updated `SignInModal.tsx` and `SignUpModal.tsx`.
+        - Changed label/input layout from grid to stacked for better readability and modern feel.
+        - Refined button styling for primary actions (Email Sign In/Up) and GitHub option.
+        - Improved the "OR" separator design.
+        - Adjusted overall spacing and modal header content for a cleaner presentation.
+        - Ensured the "Already have an account? Sign In" link in the sign-up modal is clearly styled.
+    - **Files:**
+        - `n8n-ai-workflow-generator/src/components/auth/SignInModal.tsx` (Modified)
+        - `n8n-ai-workflow-generator/src/components/auth/SignUpModal.tsx` (Modified)
+    - **Rationale:** To enhance the user experience of the authentication process with a more contemporary and intuitive form design.
+- **Created Foundational Dashboard Structure & Pages:**
+    - **Issue:** User requested a modern dashboard design.
+    - **Fix Applied:**
+        - Created a new route group `(dashboard)` under `src/app/`.
+        - Implemented `(dashboard)/dashboard/layout.tsx` with a responsive sidebar (desktop) / sheet (mobile) navigation, a header with user menu (avatar, name, email, logout), and a main content area. `SessionProvider` wraps this layout.
+        - Created `(dashboard)/dashboard/page.tsx` as the main overview page, including placeholder stat cards and quick links.
+        - Created `(dashboard)/dashboard/create/page.tsx` with a form for users to input workflow descriptions and a placeholder for generated JSON.
+        - Created `(dashboard)/dashboard/workflows/page.tsx` with a placeholder layout for listing user workflows, including search and a "Create New" button.
+        - Created `(dashboard)/dashboard/account/page.tsx` with forms for profile updates, password changes (conditional), and subscription information (placeholder).
+        - Added `UserCircle2Icon` import to `(dashboard)/dashboard/page.tsx` and `Link` import to `(dashboard)/dashboard/account/page.tsx` to fix TS errors.
+    - **Files:**
+        - `n8n-ai-workflow-generator/src/app/(dashboard)/dashboard/layout.tsx` (New)
+        - `n8n-ai-workflow-generator/src/app/(dashboard)/dashboard/page.tsx` (New)
+        - `n8n-ai-workflow-generator/src/app/(dashboard)/dashboard/create/page.tsx` (New)
+        - `n8n-ai-workflow-generator/src/app/(dashboard)/dashboard/workflows/page.tsx` (New)
+        - `n8n-ai-workflow-generator/src/app/(dashboard)/dashboard/account/page.tsx` (New)
+    - **Rationale:** To establish the core structure and initial pages for the user dashboard, providing a modern and user-friendly interface for managing workflows and account settings.
+- **Addressed Hydration Mismatch in FAQ Accordion:**
+    - **Issue:** User reported a hydration mismatch error related to `fdprocessedid` attributes on `AccordionTrigger` components in `FaqSection.tsx`.
+    - **Fix Applied:** Added `suppressHydrationWarning={true}` to the `AccordionTrigger` components within `FaqSection.tsx`.
+    - **File:** `n8n-ai-workflow-generator/src/components/landing/FaqSection.tsx`
+    - **Rationale:** To prevent React from warning about attribute mismatches likely caused by browser extensions, consistent with fixes in other components.
+- **Enhanced Sticky Header for Authenticated Users:**
+    - **Issue:** User asked how to view the dashboard, implying the need for clearer post-login navigation from the landing page.
+    - **Fix Applied:**
+        - Modified `StickyHeader.tsx` to use `useSession()` to check authentication status.
+        - If authenticated, the "Sign In" / "Sign Up" buttons are replaced with a `LandingPageUserNav` component (a dropdown menu triggered by user avatar) providing links to "Dashboard" and "Log out".
+        - If unauthenticated, the original "Sign In" / "Sign Up" modal trigger buttons are shown.
+        - Loading state is handled with placeholder shimmers.
+        - Sign In/Up modals are now conditionally rendered only if no session exists.
+    - **File:** `n8n-ai-workflow-generator/src/components/layout/StickyHeader.tsx`
+    - **Rationale:** To provide a clear and conventional way for authenticated users to access their dashboard and log out directly from the main site header.
+- **Refactored Authentication to Supabase Auth (from NextAuth.js):**
+    - **Issue:** User requested to integrate login/signup with their self-hosted Supabase, opting to replace NextAuth.js and Prisma for auth.
+    - **Fix Applied (Phase 1 & 2):**
+        - **Packages:** Installed `@supabase/supabase-js`. Uninstalled `next-auth`, `@auth/prisma-adapter`, `bcryptjs`, `@types/bcryptjs`, `prisma`, `@prisma/client`.
+        - **Supabase Client:** Created `src/lib/supabaseClient.ts` to initialize the Supabase client using `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+        - **Prisma Removal:** Deleted `prisma` directory and `src/lib/prisma.ts`. User to manage `workflows` table (and others) in Supabase.
+        - **Old Auth Files Removed:** Deleted NextAuth.js API routes (`src/app/api/auth/[...nextauth]/route.ts`, `src/app/api/auth/register/route.ts`) and `src/components/auth/AuthProvider.tsx`.
+        - **New Auth Provider:** Created `src/components/auth/SupabaseAuthProvider.tsx` using React Context to manage Supabase session and user state globally via `onAuthStateChange`.
+        - **Root Layout Update:** `src/app/layout.tsx` now uses `SupabaseAuthProvider`.
+        - **Modals Refactor:**
+            - `SignInModal.tsx`: Updated to use `supabase.auth.signInWithPassword()` and `supabase.auth.signInWithOAuth({ provider: 'github' })`.
+            - `SignUpModal.tsx`: Updated to use `supabase.auth.signUp()` (passing name to `user_metadata`) and `supabase.auth.signInWithOAuth({ provider: 'github' })`.
+        - **Header Refactor:** `StickyHeader.tsx` now uses `useSupabaseAuth()` hook to manage display of auth controls (Sign In/Up modals vs. UserNav with Dashboard/Logout links).
+        - **Dashboard Layout Refactor:** `src/app/(dashboard)/dashboard/layout.tsx` now uses `useSupabaseAuth()` for its `UserMenu` and for client-side route protection (redirecting to '/' if not authenticated after loading). Removed NextAuth's `SessionProvider`.
+    - **Files:**
+        - `package.json` (Modified)
+        - `src/lib/supabaseClient.ts` (New)
+        - `src/components/auth/SupabaseAuthProvider.tsx` (New)
+        - `src/app/layout.tsx` (Modified)
+        - `src/components/auth/SignInModal.tsx` (Modified)
+        - `src/components/auth/SignUpModal.tsx` (Modified)
+        - `src/components/layout/StickyHeader.tsx` (Modified)
+        - `src/app/(dashboard)/dashboard/layout.tsx` (Modified)
+        - (Deleted: `prisma/`, `src/lib/prisma.ts`, NextAuth API routes, `AuthProvider.tsx`)
+    - **Rationale:** To switch the entire authentication system to Supabase Auth as per user request, enabling use of their self-hosted Supabase instance for both auth and database (via Supabase client).
+- **Fixed Dashboard Overview Page Auth Context:**
+    - **Issue:** The dashboard overview page (`src/app/(dashboard)/dashboard/page.tsx`) was still attempting to use `useSession` from `next-auth/react` after the migration to Supabase Auth, causing a "Module not found" error.
+    - **Fix Applied:** Updated the page to import and use `useSupabaseAuth` from `@/components/auth/SupabaseAuthProvider.tsx` and adapted the logic to use the `user` object from the Supabase auth context.
+    - **File:** `n8n-ai-workflow-generator/src/app/(dashboard)/dashboard/page.tsx`
+    - **Rationale:** To align the dashboard overview page with the new Supabase authentication system.
+- **Added Automatic Redirect to Dashboard after Sign-In:**
+    - **Issue:** User reported that after signing in, they were not automatically redirected to the dashboard.
+    - **Fix Applied:** Modified `SignInModal.tsx` to include `router.push('/dashboard')` after a successful credentials sign-in.
+    - **File:** `n8n-ai-workflow-generator/src/components/auth/SignInModal.tsx`
+    - **Rationale:** To improve user experience by automatically navigating the user to the dashboard upon successful login with email/password. Advised user that GitHub OAuth redirects are configured in Supabase project settings.
+- **Implemented n8n Webhook Integration (Non-Streaming):**
+    - **Issue:** User requested to integrate with an n8n agent via webhook, sending prompts securely with an API key.
+    - **Fix Applied (Phase 1 & 2 - Non-Streaming):**
+        - Created a backend API route `src/app/api/generate-workflow/route.ts`. This route:
+            - Receives a `prompt` from the frontend.
+            - Reads `N8N_WEBHOOK_URL` and `N8N_API_KEY` from environment variables.
+            - Makes a POST request to the n8n webhook with the prompt and `Authorization: Bearer {API_KEY}` header.
+            - Assumes the n8n webhook returns a complete JSON response (the n8n workflow).
+            - Returns this JSON to the frontend or an error if the call fails.
+        - Updated `src/app/(dashboard)/dashboard/create/page.tsx`:
+            - The form now calls the `/api/generate-workflow` endpoint.
+            - Manages loading and error states.
+            - Displays the returned n8n JSON (pretty-printed) or an error message.
+            - Enables "Copy JSON" and "Download JSON" buttons when JSON is available, with basic client-side copy/download functionality.
+    - **Files:**
+        - `src/app/api/generate-workflow/route.ts` (New)
+        - `src/app/(dashboard)/dashboard/create/page.tsx` (Modified)
+    - **Rationale:** To establish the core secure communication channel between the web app and the n8n agent webhook for generating workflows. Streaming is a future enhancement.
+- **Attempted to Fix 401 Error in API Route (generate-workflow):**
+    - **Issue:** User reported 401 Unauthorized error when calling `/api/generate-workflow`.
+    - **Attempt 1:** Modified the API route to use `createRouteHandlerClient` from `@supabase/ssr`. Resulted in TS error "Module '@supabase/ssr' has no exported member 'createRouteHandlerClient'".
+    - **Attempt 2:** Changed cookie handling for `createRouteHandlerClient`. Error persisted.
+    - **Attempt 3:** Reverted to shared `supabaseClient` from `lib/supabaseClient.ts`. User still reported 401.
+    - **Attempt 4:** After user refreshed `node_modules` and `package-lock.json`, re-implemented the API route to use `createRouteHandlerClient({ cookies: () => cookieStore })` from `@supabase/ssr`. User still reported TS errors ("Cannot find module 'next/server'", "no exported member 'createRouteHandlerClient'").
+    - **File:** `src/app/api/generate-workflow/route.ts` (Modified multiple times)
+    - **Rationale:** Iteratively trying to implement correct server-side session handling for Supabase. The persistent errors suggest deep environment/package issues on the user's side.
+- **Resolved Build Errors from Leftover NextAuth.js Files:**
+    - **Issue:** User reported build errors: "Module not found" for `next-auth` and related packages, originating from `src/app/api/auth/[...nextauth]/route.ts`.
+    - **Fix Applied:** Confirmed with user that the entire `src/app/api/auth` directory (which contained the old NextAuth.js API routes) was manually deleted.
+    - **Files:** (Deleted by user: `src/app/api/auth/` directory)
+    - **Rationale:** To remove stale NextAuth.js files that were causing build failures after the migration to Supabase Auth.
+
+**Next Steps:**
+- User to confirm if build errors related to `next-auth` are resolved.
+- User to test the `/api/generate-workflow` endpoint again. If 500 errors related to `createRouteHandlerClient` persist, it indicates ongoing environment issues with `@supabase/ssr`. If 401 errors occur, it means the server-side session is still not being correctly picked up.
+- User to resolve any remaining environment issues preventing `@supabase/ssr` from working correctly (e.g., "Cannot find module 'next/server'", "'@supabase/ssr' has no exported member 'createRouteHandlerClient'").
+- User to set `N8N_WEBHOOK_URL` and `N8N_API_KEY` environment variables.
+- User to ensure their n8n webhook is configured to accept a `prompt` in the JSON body and return the n8n workflow JSON.
+- User to ensure `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are correctly set in `.env`.
+- User to ensure `workflows` table (and any other necessary tables previously in Prisma schema) are created in their Supabase database, with `user_id` in `workflows` referencing `auth.users.id`.
+- User to configure GitHub OAuth redirect URLs in their Supabase project settings if they want direct redirection to `/dashboard` after GitHub sign-in.
+- Thoroughly test the new Supabase authentication flow:
+    - Email/Password Sign Up (check if email confirmation is enabled in Supabase settings and how it affects flow).
+    - Email/Password Sign In.
+    - GitHub Sign Up / Sign In.
+    - Logout functionality.
+    - Session persistence and state changes across the app (landing page header, dashboard access).
+- Verify client-side route protection for the dashboard.
+- (Future) Refactor data fetching for `workflows` in the dashboard to use `supabaseClient` instead of Prisma.
+- Verify the enhanced StickyHeader behavior for both authenticated and unauthenticated states.
+- Verify the fix for the FAQ section hydration error.
+- Verify the new dashboard layout and placeholder pages (Overview, Create, My Workflows, Account).
+- Verify the redesigned Sign-In and Sign-Up modals.
+- Verify the redesigned Features Section.
+- Verify the redesigned Sign-In and Sign-Up modals.
+- Verify the redesigned Features Section.
+- Verify the redesigned Pricing Section.
+- Verify the enhanced Hero Section design.
+- Verify the spacing between the header and hero section.
+- Verify the new "Contact Us" section design.
+- Verify the new FAQ section and its accordion layout.
+- Verify the new horizontal timeline "How It Works" section design and layout.
+- Verify the fix for the "Learn More" button styling in `HeroSection` by visual inspection on the page.
+- Verify Sign In/Sign Up modal functionality:
+    - Clicking "Sign In" / "Sign Up" buttons in header opens the respective modals.
+    - Test email/password sign-up through the modal.
+    - Test email/password sign-in through the modal.
+    - Test GitHub sign-in/sign-up through the modals.
+    - Verify error handling and success messages (toasts) in modals.
+- Verify the fix for the button hydration mismatch in `ContactUsSection` by running the development server and checking the browser console.
+- Verify the fix for the input field hydration mismatch in `ContactUsSection` by running the development server and checking the browser console.
+- Verify the fix for the general hydration mismatch by running the development server and checking the browser console.
+- Verify the previous fix for nested anchor tags in `StickyHeader` by running the development server and checking the browser console for any hydration errors or deprecation warnings related to `Link`.
+- Update `progress.md` to reflect the resolution of these bugs.
+
+**Active Considerations & Learnings:**
+- The `legacyBehavior` prop on `next/link` is deprecated.
+- The modern approach for integrating Next.js `<Link>` with Radix UI based components (like those in shadcn/ui) that render their own anchor tags is to use the `asChild` prop on the Radix component and pass the Next.js `<Link>` as its direct child. The styling props (like `className`) should then be applied to the Next.js `<Link>` component.
+
+**User Preferences:**
+- Ensure UI components are free of hydration errors.
+- Adhere to current best practices and avoid deprecated features.
