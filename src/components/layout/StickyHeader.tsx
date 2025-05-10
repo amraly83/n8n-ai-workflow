@@ -11,83 +11,14 @@ import {
 } from '@/components/ui/navigation-menu';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { MenuIcon, BotMessageSquareIcon, LogOutIcon, LayoutDashboardIcon } from 'lucide-react';
-import { SignInModal } from '@/components/auth/SignInModal';
-import { SignUpModal } from '@/components/auth/SignUpModal';
-import { useSupabaseAuth } from '@/components/auth/SupabaseAuthProvider'; // Changed import
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { MenuIcon, BotMessageSquareIcon } from 'lucide-react'; // Removed LogOutIcon, LayoutDashboardIcon
+import { SignedIn, SignedOut, UserButton, SignInButton, SignUpButton } from '@clerk/nextjs';
 // import { cn } from '@/lib/utils'; // Removed unused cn
 
-
-// Simplified UserNav for the landing page header
-function LandingPageUserNav() {
-  const { user, signOut } = useSupabaseAuth();
-
-  if (!user) return null;
-
-  // Supabase stores custom user data in user_metadata
-  const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
-  const userEmail = user.email;
-  const userImage = user.user_metadata?.avatar_url || user.user_metadata?.picture;
-
-
-  const getInitials = (name?: string | null) => {
-    if (!name) return 'U';
-    const names = name.split(' ');
-    if (names.length > 1) {
-      return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
-    }
-    return name.substring(0, 2).toUpperCase();
-  };
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-          <Avatar className="h-9 w-9 border dark:border-slate-600">
-            <AvatarImage src={userImage ?? undefined} alt={userName ?? 'User'} />
-            <AvatarFallback>{getInitials(userName)}</AvatarFallback>
-          </Avatar>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none text-slate-900 dark:text-white">{userName}</p>
-            <p className="text-xs leading-none text-slate-500 dark:text-slate-400">{userEmail}</p>
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild className="cursor-pointer">
-          <Link href="/dashboard">
-            <LayoutDashboardIcon className="mr-2 h-4 w-4" />
-            Dashboard
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={async () => await signOut()} className="cursor-pointer text-red-600 dark:text-red-400 hover:!bg-red-50 dark:hover:!bg-red-500/10 focus:!bg-red-50 dark:focus:!bg-red-500/10 focus:!text-red-600 dark:focus:!text-red-400">
-          <LogOutIcon className="mr-2 h-4 w-4" />
-          Log out
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-
 export default function StickyHeader() {
-  const { user, isLoading } = useSupabaseAuth();
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
-  const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
+  // Removed state for custom modals: isSignInModalOpen, isSignUpModalOpen
+  // Removed useSupabaseAuth hook
 
   useEffect(() => {
     const handleScroll = () => {
@@ -135,29 +66,25 @@ export default function StickyHeader() {
         </NavigationMenu>
 
         <div className="hidden items-center gap-2 lg:flex">
-          {isLoading ? (
-            <div className="h-10 w-24 animate-pulse rounded-md bg-slate-200 dark:bg-slate-700"></div>
-          ) : user ? (
-            <LandingPageUserNav />
-          ) : (
-            <>
-              <Button variant="outline" onClick={() => setIsSignInModalOpen(true)}>
-                Sign In
-              </Button>
-              <Button onClick={() => setIsSignUpModalOpen(true)}>
-                Sign Up
-              </Button>
-            </>
-          )}
+          <SignedIn>
+            <UserButton afterSignOutUrl="/" />
+          </SignedIn>
+          <SignedOut>
+            <SignInButton mode="modal">
+              <Button variant="outline">Sign In</Button>
+            </SignInButton>
+            <SignUpButton mode="modal">
+              <Button>Sign Up</Button>
+            </SignUpButton>
+          </SignedOut>
         </div>
 
         {/* Mobile Navigation */}
         <div className="lg:hidden">
-          {!isLoading && user ? (
-             <LandingPageUserNav />
-          ) : isLoading ? (
-             <div className="h-10 w-10 animate-pulse rounded-full bg-slate-200 dark:bg-slate-700"></div>
-          ) : (
+          <SignedIn>
+            <UserButton afterSignOutUrl="/" />
+          </SignedIn>
+          <SignedOut>
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="outline" size="icon">
@@ -185,37 +112,22 @@ export default function StickyHeader() {
                   ))}
                   <hr className="my-2 border-slate-200 dark:border-slate-700" />
                   <SheetTrigger asChild>
-                    <Button variant="outline" className="w-full" onClick={() => setIsSignInModalOpen(true)}>
-                      Sign In
-                    </Button>
+                    <SignInButton mode="modal">
+                      <Button variant="outline" className="w-full">Sign In</Button>
+                    </SignInButton>
                   </SheetTrigger>
                   <SheetTrigger asChild>
-                    <Button className="w-full" onClick={() => setIsSignUpModalOpen(true)}>
-                      Sign Up
-                    </Button>
+                     <SignUpButton mode="modal">
+                        <Button className="w-full">Sign Up</Button>
+                     </SignUpButton>
                   </SheetTrigger>
                 </div>
               </SheetContent>
             </Sheet>
-          )}
+          </SignedOut>
         </div>
       </div>
-      {!isLoading && !user && (
-        <>
-          <SignInModal 
-            open={isSignInModalOpen} 
-            onOpenChange={setIsSignInModalOpen} 
-          />
-          <SignUpModal 
-            open={isSignUpModalOpen} 
-            onOpenChange={setIsSignUpModalOpen}
-            onSignInClick={() => {
-              setIsSignUpModalOpen(false);
-              setIsSignInModalOpen(true);
-            }}
-          />
-        </>
-      )}
+      {/* Removed custom SignInModal and SignUpModal, Clerk handles its own modals */}
     </header>
   );
 }
