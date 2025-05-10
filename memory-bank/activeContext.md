@@ -19,6 +19,11 @@
         - Utilize Clerk's `<SignedIn>`, `<SignedOut>`, `<UserButton>`, `<SignInButton>`, and `<SignUpButton>` components to handle authentication UI. This aligns with Clerk's standard patterns and removes the need for custom Supabase-tied logic and modals in this component.
     - **File:** `n8n-ai-workflow-generator/src/components/layout/StickyHeader.tsx`
     - **Rationale:** To make the `StickyHeader` compatible with the Clerk authentication system, resolve the build error on the root page, and simplify authentication UI by leveraging Clerk's built-in components.
+- **Resolved ESLint Unused Vars in Root Layout:**
+    - **Issue:** Build failed due to ESLint errors for unused Clerk component imports (`SignInButton`, `SignUpButton`, `SignedIn`, `SignedOut`, `UserButton`) in `src/app/layout.tsx`. This occurred after removing the generic header from this file.
+    - **Fix Applied:** Removed the unused import statements from `n8n-ai-workflow-generator/src/app/layout.tsx`, keeping only the necessary `ClerkProvider` import.
+    - **File:** `n8n-ai-workflow-generator/src/app/layout.tsx`
+    - **Rationale:** To fix ESLint errors and ensure a clean build by removing unneeded imports.
 - **Addressed Clerk UI and Navigation Feedback:**
     - **Issue:** User reported several UI/UX issues after Clerk integration: no redirect to dashboard post-login, duplicate auth controls, `UserButton` navigating to Clerk settings instead of app dashboard, and dashboard only accessible via "Get Started" button.
     - **Fix Applied:**

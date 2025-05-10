@@ -17,14 +17,18 @@
     *   Updated "Sign In" and "Sign Up" button links in `StickyHeader.tsx` to point to `/api/auth/signin` for correct NextAuth.js redirection (Note: This will need to be revisited now that Clerk is the auth system).
 *   **Authentication System & Build Fixes:**
     *   **Aligned with Clerk Authentication & Addressed UI Feedback:** Based on new user feedback, the authentication system and UI have been further aligned with Clerk.
-        *   **Root Layout (`src/app/layout.tsx`):** Reverted to use `ClerkProvider`. The redundant generic `<header>` with Clerk auth buttons was removed, as `StickyHeader.tsx` now manages this UI.
+        *   **Root Layout (`src/app/layout.tsx`):** 
+            *   Reverted to use `ClerkProvider`. 
+            *   The redundant generic `<header>` with Clerk auth buttons was removed.
+            *   Removed unused Clerk component imports (`SignInButton`, `SignUpButton`, `SignedIn`, `SignedOut`, `UserButton`) to resolve ESLint errors.
         *   **Dashboard Layout (`src/app/(dashboard)/dashboard/layout.tsx`):** Previously refactored to use Clerk's `useUser()` and `useClerk()` hooks. No new changes in this step.
         *   **Sticky Header (`src/components/layout/StickyHeader.tsx`):** 
             *   Previously refactored to use Clerk's `<SignedIn>`, `<SignedOut>`, `<UserButton>`, `<SignInButton>`, and `<SignUpButton>` components.
             *   Corrected `SignInButton` and `SignUpButton` props by removing `afterSignInUrl` and `afterSignUpUrl` when `mode="modal"`, as redirection for modal flows is handled via Clerk Dashboard settings.
             *   Added a conditional "Dashboard" link to both desktop and mobile navigation areas, visible only to signed-in users.
-    *   **Resolved Prerender Errors & Addressed UI Issues:** 
+    *   **Resolved Build Errors & Addressed UI Issues:** 
         *   The `Error: useSupabaseAuth must be used within a SupabaseAuthProvider` is resolved.
+        *   ESLint errors for unused variables in `app/layout.tsx` are resolved.
         *   Duplicate auth controls issue is resolved.
         *   Clearer navigation to the dashboard for authenticated users is provided.
         *   Post-login redirection now relies on Clerk Dashboard configuration.
@@ -159,10 +163,11 @@
     *   **Fix Applied:** `src/middleware.ts` was modified so the `createServerClient` instance (used for `getSession`) now reads cookies from `res.cookies`. This should allow it to correctly detect active sessions refreshed by `updateSession`. Further testing by the user is needed to confirm this resolves the dashboard access issue.
 *   **Environmental Issue:** `prisma db push` failed due to database connection error. User needs to ensure PostgreSQL server is running. (This is now less relevant as Prisma for auth is removed, but still relevant if Prisma is used for other tables with Supabase DB).
 *   **Environmental Issue:** `prisma generate` failed with EPERM error. User needs to resolve this. (This is now less relevant as Prisma for auth is removed. TypeScript errors related to `hashedPassword` in old NextAuth files are also irrelevant as those files are deleted).
-*   **Addressed (Build Error & UI):** Prerender errors related to `useSupabaseAuth` and user feedback on Clerk UI (duplicate controls, navigation, redirection) have been addressed by:
-    *   Consistently implementing Clerk authentication across `app/layout.tsx`, `app/(dashboard)/dashboard/layout.tsx`, and `components/layout/StickyHeader.tsx`.
-    *   Removing redundant headers from `app/layout.tsx`.
-    *   Correcting Clerk button props in `StickyHeader.tsx` and adding conditional "Dashboard" links.
+*   **Addressed (Build Error & UI):** 
+    *   Prerender errors related to `useSupabaseAuth` and user feedback on Clerk UI (duplicate controls, navigation, redirection) have been addressed by consistently implementing Clerk authentication across `app/layout.tsx`, `app/(dashboard)/dashboard/layout.tsx`, and `components/layout/StickyHeader.tsx`.
+    *   ESLint errors for unused imports in `app/layout.tsx` were resolved.
+    *   Redundant headers were removed from `app/layout.tsx`.
+    *   Clerk button props in `StickyHeader.tsx` were corrected, and conditional "Dashboard" links were added.
 *   **Future Consideration:** Implement streaming response handling for the n8n webhook integration.
 *   **Future Consideration:** Data fetching for `workflows` in the dashboard needs to be refactored to use `supabaseClient`.
 *   **Ongoing Verification:** Hydration warnings in `ContactUsSection` and general layout still need verification after previous suppression attempts.
