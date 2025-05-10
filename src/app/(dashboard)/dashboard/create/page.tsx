@@ -102,7 +102,7 @@ export default function CreateWorkflowPage() {
                 id="workflowDescription"
                 rows={8}
                 className="dark:bg-slate-700 dark:text-white dark:border-slate-600 focus:ring-sky-500 focus:border-sky-500 disabled:opacity-70"
-                placeholder={`e.g., Every Monday at 9 AM, fetch new posts from an RSS feed, summarize them using AI, and send the summaries to a "Discord" channel...`} // Using template literal
+                placeholder="e.g., Every Monday at 9 AM, fetch new posts from an RSS feed, summarize them using AI, and send the summaries to a Discord channel..."
                 required
                 value={workflowDescription}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setWorkflowDescription(e.target.value)}
