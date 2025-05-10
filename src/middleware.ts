@@ -6,7 +6,7 @@ import { createServerClient } from '@supabase/ssr'; // Still need this for a new
 export async function middleware(req: NextRequest) {
   // First, run updateSession to handle session refresh and cookie updates.
   // updateSession returns a response object that should be used for subsequent operations.
-  let res = await updateSession(req);
+  const res = await updateSession(req);
 
   // To check the session *after* updateSession has potentially refreshed it,
   // we need a Supabase client instance that can read the (potentially updated) request cookies

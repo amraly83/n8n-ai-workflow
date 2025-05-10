@@ -53,7 +53,7 @@ export default function CreateWorkflowPage() {
     if (generatedJson) {
       navigator.clipboard.writeText(JSON.stringify(generatedJson, null, 2))
         .then(() => toast.success("JSON copied to clipboard!"))
-        .catch(_err => toast.error("Failed to copy JSON.")); // Prefixed err with _
+        .catch(() => toast.error("Failed to copy JSON."));
     }
   };
 

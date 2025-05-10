@@ -4,7 +4,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 export async function updateSession(request: NextRequest) {
   console.log('[updateSession] Incoming request cookies:', request.cookies.getAll().map(c => c.name));
 
-  let response = NextResponse.next({
+  const response = NextResponse.next({
     request: {
       headers: request.headers,
     },
