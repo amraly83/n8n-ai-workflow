@@ -19,6 +19,17 @@
         - Utilize Clerk's `<SignedIn>`, `<SignedOut>`, `<UserButton>`, `<SignInButton>`, and `<SignUpButton>` components to handle authentication UI. This aligns with Clerk's standard patterns and removes the need for custom Supabase-tied logic and modals in this component.
     - **File:** `n8n-ai-workflow-generator/src/components/layout/StickyHeader.tsx`
     - **Rationale:** To make the `StickyHeader` compatible with the Clerk authentication system, resolve the build error on the root page, and simplify authentication UI by leveraging Clerk's built-in components.
+- **Addressed Clerk UI and Navigation Feedback:**
+    - **Issue:** User reported several UI/UX issues after Clerk integration: no redirect to dashboard post-login, duplicate auth controls, `UserButton` navigating to Clerk settings instead of app dashboard, and dashboard only accessible via "Get Started" button.
+    - **Fix Applied:**
+        1.  **Removed Duplicate Header:** The generic `<header>` containing Clerk auth buttons in `n8n-ai-workflow-generator/src/app/layout.tsx` was removed, making `StickyHeader.tsx` the sole provider of header authentication UI.
+        2.  **Configured Clerk Button Redirects (Attempted):** Initially tried adding `afterSignInUrl` and `afterSignUpUrl` to `SignInButton` and `SignUpButton` in `StickyHeader.tsx`. This caused TypeScript errors as these props are not applicable when `mode="modal"`.
+        3.  **Corrected Clerk Button Props:** Removed `afterSignInUrl` and `afterSignUpUrl` from modal `SignInButton` and `SignUpButton` in `StickyHeader.tsx`. Post-login redirection now relies on Clerk Dashboard settings.
+        4.  **Added Conditional Dashboard Link:** A "Dashboard" link was added to both desktop and mobile navigation sections within `StickyHeader.tsx`, visible only when a user is signed in (`<SignedIn>`).
+    - **Files:**
+        - `n8n-ai-workflow-generator/src/app/layout.tsx` (Removed redundant header)
+        - `n8n-ai-workflow-generator/src/components/layout/StickyHeader.tsx` (Adjusted Clerk buttons, added conditional Dashboard link)
+    - **Rationale:** To resolve UI duplication, ensure correct usage of Clerk component props, and provide clear navigation to the application dashboard for authenticated users. Post-login redirection is now correctly deferred to Clerk's central configuration.
 - **Re-enabled Auth in `/api/generate-workflow` Route:**
     - **Context:** Authentication for this route was temporarily disabled to allow local testing of the n8n agent call, due to issues accessing the dashboard locally (caused by Supabase Site URL mismatch).
     - **User Request:** To ensure user status is checked before any action on the website, in preparation for creating a GitHub repository.

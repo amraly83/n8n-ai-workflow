@@ -62,6 +62,15 @@ export default function StickyHeader() {
                 </NavigationMenuLink>
               </NavigationMenuItem>
             ))}
+            <SignedIn>
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild>
+                  <Link href="/dashboard" className={navigationMenuTriggerStyle()}>
+                    Dashboard
+                  </Link>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+            </SignedIn>
           </NavigationMenuList>
         </NavigationMenu>
 
@@ -110,6 +119,16 @@ export default function StickyHeader() {
                       </Link>
                     </SheetTrigger>
                   ))}
+                  <SignedIn>
+                    <SheetTrigger asChild>
+                      <Link
+                        href="/dashboard"
+                        className="block rounded-md p-2 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800"
+                      >
+                        Dashboard
+                      </Link>
+                    </SheetTrigger>
+                  </SignedIn>
                   <hr className="my-2 border-slate-200 dark:border-slate-700" />
                   <SheetTrigger asChild>
                     <SignInButton mode="modal">

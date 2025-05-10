@@ -37,15 +37,7 @@ export default function RootLayout({
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}  // Kept font variables and antialiased
           suppressHydrationWarning={true} /* Added suppressHydrationWarning from previous state */
         >
-          <header>
-            <SignedOut>
-              <SignInButton />
-              <SignUpButton />
-            </SignedOut>
-            <SignedIn>
-              <UserButton />
-            </SignedIn>
-          </header>
+          {/* Header with auth controls is now handled by StickyHeader component */}
           {children}
         </body>
       </html>
